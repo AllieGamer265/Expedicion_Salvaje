@@ -1,0 +1,9 @@
+# Credenciales y datos sensibles
+CLAVES.txt
+
+# Dependencias
+node_modules/
+
+# Archivos temporales del sistema
+Thumbs.db
+.DS_Store

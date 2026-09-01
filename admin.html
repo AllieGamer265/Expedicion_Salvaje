@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Expedición Salvaje</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="admin-page">
+
+  <div id="admin-login" class="admin-login-container hidden">
+    <h1>🐾 Panel Admin</h1>
+    <form onsubmit="handleAdminLogin(event)">
+      <input
+        type="text"
+        id="admin-username"
+        class="input"
+        placeholder="Username"
+        data-i18n-placeholder="admin.username"
+        autocomplete="off"
+      >
+      <button type="submit" class="btn-primary" data-i18n="admin.enter">Entrar</button>
+    </form>
+    <div id="admin-error" class="error-message hidden"></div>
+  </div>
+
+  <div id="admin-panel" class="hidden">
+    <header class="admin-header">
+      <h1>🐾 Panel de Control - Expedición Salvaje</h1>
+      <div class="header-actions">
+        <div class="language-toggle-small">
+          <button onclick="setLanguage('es')" class="lang-btn-small">ES</button>
+          <button onclick="setLanguage('en')" class="lang-btn-small">EN</button>
+        </div>
+        <button onclick="adminLogout()" class="btn-logout">Salir</button>
+      </div>
+    </header>
+
+    <nav class="admin-nav">
+      <button onclick="showSection('assign-points', this)" class="nav-btn active" data-i18n="admin.assignPoints">Asignar Puntos</button>
+      <button onclick="showSection('theme', this)" class="nav-btn">🎨 Tema del Mes</button>
+      <button onclick="showSection('reset', this)" class="nav-btn">🔄 Reiniciar Puntos</button>
+    </nav>
+
+    <main class="admin-main">
+
+      <section id="section-assign-points" class="admin-section">
+        <h2 data-i18n="admin.assignPoints">Asignar Puntos</h2>
+        <p style="margin-bottom: 20px; color: #666;" data-i18n="admin.sectionHint">
+          Añade puntos a un alumno. Se suman directo a su total.
+        </p>
+        <form id="assign-points-form" onsubmit="handleAssignPoints(event)">
+          <div class="form-group">
+            <label data-i18n="admin.selectStudent">Seleccionar alumno</label>
+            <select id="assign-points-student" required></select>
+          </div>
+          <div class="form-group">
+            <label data-i18n="admin.points">Puntos</label>
+            <input type="number" id="assign-points-value" min="1" max="1000" required>
+          </div>
+          <button type="submit" class="btn-primary" data-i18n="admin.addPoints">Agregar puntos</button>
+        </form>
+        <div id="assign-points-message" class="hidden"></div>
+      </section>
+
+      <section id="section-theme" class="admin-section hidden">
+        <h2>🎨 Tema del Mes</h2>
+        <p style="margin-bottom: 20px; color: #666;" data-i18n="admin.themeHint">
+          Elige el tema del mes. Los alumnos lo verán como un banner con su color en su portal.
+        </p>
+
+        <div class="form-group">
+          <label data-i18n="admin.activeTheme">Tema activo</label>
+          <select id="theme-select"></select>
+        </div>
+
+        <div class="form-group">
+          <label>🌍 <span data-i18n="admin.themeColor">Color del tema</span></label>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <input type="color" id="theme-color" value="#0077B6" style="width:60px; height:40px; padding:0; border:none; background:none;">
+            <span id="theme-color-preview" style="padding:6px 14px; border-radius:8px; color:white; font-weight:700; background:#0077B6;">Animales Marinos</span>
+          </div>
+        </div>
+
+        <button onclick="saveActiveTheme()" class="btn-primary" style="margin-bottom: 32px;" data-i18n="admin.themeSave">Guardar tema del mes</button>
+
+        <div id="theme-message" class="hidden" style="margin-top: 8px; margin-bottom: 16px;"></div>
+
+        <hr style="border:none; border-top:1px solid #eee; margin: 8px 0 24px;">
+
+        <h3 style="font-size:16px; color:var(--verde-bosque); margin-bottom:16px;" data-i18n="admin.customThemeTitle">➕ Añadir tema personalizado</h3>
+
+        <div class="form-group">
+          <label data-i18n="admin.customThemeName">Nombre (español)</label>
+          <input type="text" id="custom-theme-name" placeholder="Ej: Animales del Pantano">
+        </div>
+        <div class="form-group">
+          <label data-i18n="admin.customThemeNameEn">Nombre (inglés)</label>
+          <input type="text" id="custom-theme-name-en" placeholder="Ej: Swamp Animals">
+        </div>
+        <div class="form-group">
+          <label data-i18n="admin.customThemeEmoji">Emoji</label>
+          <input type="text" id="custom-theme-emoji" placeholder="🐸" maxlength="4">
+        </div>
+        <div class="form-group">
+          <label data-i18n="admin.customThemeColor">Color</label>
+          <input type="color" id="custom-theme-color" value="#4CAF50">
+        </div>
+        <button onclick="createCustomTheme()" class="btn-secondary" data-i18n="admin.customThemeCreate">Crear tema personalizado</button>
+      </section>
+
+      <section id="section-reset" class="admin-section hidden">
+        <h2>🔄 Reiniciar Puntos del Mes</h2>
+        <p style="margin-bottom: 20px; color: #666;">
+          Esto eliminará TODOS los resultados de las clases del mes actual.
+          Los alumnos empezarán desde 0 puntos.
+        </p>
+        <div class="form-group">
+          <label>Mes a reiniciar</label>
+          <select id="reset-month"></select>
+        </div>
+        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+          <strong>⚠️ Advertencia:</strong> Esta acción no se puede deshacer. Se eliminarán todos los resultados del mes seleccionado.
+        </div>
+        <button onclick="resetMonth()" class="btn-primary" style="background: #dc3545;">
+          🗑️ Eliminar todos los puntos de este mes
+        </button>
+        <div id="reset-message" class="hidden" style="margin-top: 16px;"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/medals.js"></script>
+  <script src="js/admin.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', initAdmin);
+  </script></body>
+</html>

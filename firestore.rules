@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Reglas para colección de alumnos
+    match /students/{studentCode} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Reglas para resultados/clases
+    match /results/{resultId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Reglas para medallas
+    match /medals/{medalId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Reglas para premios/asignaciones
+    match /awards/{awardId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Reglas para configuración global
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐾 Setup - Expedición Salvaje</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #2D5016 0%, #0077B6 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .setup-container {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    h1 { color: #2D5016; text-align: center; margin-bottom: 24px; }
+    .log { 
+      background: #f5f5f5; 
+      border-radius: 8px; 
+      padding: 16px; 
+      max-height: 400px; 
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+    .log-entry { margin: 4px 0; }
+    .log-entry.success { color: #2D5016; }
+    .log-entry.error { color: #c62828; }
+    .log-entry.info { color: #0077B6; }
+    .btn-setup {
+      width: 100%;
+      padding: 16px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .links { text-align: center; margin-top: 24px; }
+    .links a { 
+      display: inline-block; 
+      margin: 8px 12px; 
+      color: #0077B6; 
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .links a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="setup-container">
+    <h1>🐾 Setup Automático</h1>
+    <p style="text-align:center; color: #666; margin-bottom: 24px;">
+      Este archivo configura todo automáticamente en Firestore
+    </p>
+    
+    <div id="log" class="log">
+      <div class="log-entry info">⏳ Listo para configurar...</div>
+    </div>
+    
+    <button onclick="runSetup()" class="btn-primary btn-setup" id="setup-btn">
+      🚀 Ejecutar Setup Completo
+    </button>
+    
+    <div class="links">
+      <a href="index.html">🐾 Ir al Login</a>
+      <a href="admin.html">⚙️ Ir al Admin</a>
+      <a href="student.html?code=pruebawild75">🦁 Ver alumno de prueba</a>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  
+  <script>
+    function log(msg, type = 'info') {
+      const logEl = document.getElementById('log');
+      const entry = document.createElement('div');
+      entry.className = 'log-entry ' + type;
+      entry.textContent = msg;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    async function runSetup() {
+      const btn = document.getElementById('setup-btn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Configurando...';
+      
+      log('🚀 Iniciando setup completo...', 'info');
+      log('', 'info');
+
+      // 1. Importar todos los alumnos
+      const STUDENTS = [
+        { code: "Coyote_Wild_260", name: "Dylan", animal: "Coyote", emoji: "🐺" },
+        { code: "Isa_Wolf_900", name: "Isabella", animal: "Lobo", emoji: "🐺" },
+        { code: "Sammy_Shark_260", name: "Samantha", animal: "Tiburón", emoji: "🦈" },
+        { code: "Blue_FlamingoPink99", name: "Azul", animal: "Flamenco", emoji: "🦩" },
+        { code: "Luanna_DuckSplash04", name: "Luanna", animal: "Pantera", emoji: "🐆" },
+        { code: "Ary_Tiger_05", name: "Ary", animal: "Tigre", emoji: "🐅" },
+        { code: "WhiteRabbit_Luna", name: "Luna", animal: "Conejo Blanco", emoji: "🐇" },
+        { code: "Benja_Bear_04", name: "Benja", animal: "Oso", emoji: "🐻" },
+        { code: "Capy_Lore_260", name: "Loretta", animal: "Capibara", emoji: "🦫" },
+        { code: "Lili_Tiger_6th", name: "Lili", animal: "Tigre", emoji: "🐅" },
+        { code: "pruebawild75", name: "Prueba", animal: "León", emoji: "🦁" }
+      ];
+
+      log('📝 Importando ' + STUDENTS.length + ' alumnos...', 'info');
+      
+      for (const student of STUDENTS) {
+        try {
+          await db.collection('students').doc(student.code).set({
+            name: student.name,
+            animal: student.animal,
+            emoji: student.emoji,
+            category: "trivia",
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          log('✅ ' + student.name + ' (' + student.code + ')', 'success');
+        } catch (e) {
+          log('❌ Error con ' + student.name + ': ' + e.message, 'error');
+        }
+      }
+
+      log('', 'info');
+      log('⚙️ Creando configuración global...', 'info');
+      
+      try {
+        await db.collection('settings').doc('global').set({
+          currentMonth: 'septiembre-2025',
+          currentTheme: 'animales-marinos',
+          language: 'es',
+          adminUsername: 'WildCaptain_260'
+        });
+        log('✅ Configuración creada', 'success');
+      } catch (e) {
+        log('❌ Error en settings: ' + e.message, 'error');
+      }
+
+      log('', 'info');
+      log('🎯 Agregando resultado de prueba para pruebawild75...', 'info');
+      
+      try {
+        await db.collection('results').add({
+          studentCode: "pruebawild75",
+          className: "El Delfín",
+          month: "septiembre-2025",
+          theme: "animales-marinos",
+          correctAnswers: 4,
+          totalQuestions: 5,
+          date: "2025-09-05",
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        log('✅ Resultado: El Delfín - 4/5 respuestas correctas = 40 puntos', 'success');
+      } catch (e) {
+        log('❌ Error en resultado: ' + e.message, 'error');
+      }
+
+      log('', 'info');
+      log('🏆 Creando medalla de prueba...', 'info');
+      
+      try {
+        await db.collection('medals').add({
+          name: "Primer Pescador",
+          nameEn: "First Fisher",
+          description: "Obtuvo 4+ respuestas correctas en una clase",
+          descriptionEn: "Got 4+ correct answers in a single class",
+          icon: "fish",
+          color: "#00BFFF",
+          criteria: {
+            type: "single_class_score",
+            minCorrect: 4
+          },
+          month: "septiembre-2025",
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        log('✅ Medalla "Primer Pescador" creada', 'success');
+      } catch (e) {
+        log('❌ Error en medalla: ' + e.message, 'error');
+      }
+
+      log('', 'info');
+      log('========================================', 'info');
+      log('🎉 ¡SETUP COMPLETADO!', 'success');
+      log('========================================', 'info');
+      log('', 'info');
+      log('Ahora puedes:', 'info');
+      log('→ Probar el login con "pruebawild75"', 'info');
+      log('→ Ver los puntos en el portal del alumno', 'info');
+      log('→ Usar el admin con "WildCaptain_260"', 'info');
+      
+      btn.textContent = '✅ ¡Setup completado!';
+      btn.style.background = '#2D5016';
+    }
+  </script>
+</body>
+</html>

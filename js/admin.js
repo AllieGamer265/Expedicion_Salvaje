@@ -80,46 +80,83 @@ function showSection(sectionId, btn) {
   if (btn) btn.classList.add('active');
 }
 
-function renderResetForm() {
+async function getExistingResultMonths() {
+  const monthsSet = {};
+  try {
+    const snap = await db.collection('results').get();
+    snap.forEach(doc => {
+      const m = doc.data().month;
+      if (m) monthsSet[m] = (monthsSet[m] || 0) + 1;
+    });
+  } catch (e) {
+    console.error('Error leyendo meses existentes:', e);
+  }
+  return monthsSet;
+}
+
+async function renderResetForm() {
   const select = document.getElementById('reset-month');
   if (!select) return;
 
   const currentMonth = getCurrentMonthId();
-  const monthOptions =
-    `<option value="${currentMonth}">${currentMonth} (${t('admin.current')})</option>` +
-    MONTHS.map(m =>
-      `<option value="${m.id}">${getLanguage() === 'en' ? m.nameEn : m.name}</option>`
-    ).join('');
-  select.innerHTML = monthOptions;
+  const existingMonths = await getExistingResultMonths();
+  const existingIds = Object.keys(existingMonths);
+
+  const ordered = [];
+  existingIds.forEach(m => { if (!ordered.includes(m)) ordered.push(m); });
+  if (!ordered.includes(currentMonth)) ordered.push(currentMonth);
+  MONTHS.forEach(m => { if (!ordered.includes(m.id)) ordered.push(m.id); });
+
+  const monthOptions = ordered.map(id => {
+    const meta = MONTHS.find(x => x.id === id);
+    const baseName = meta ? (getLanguage() === 'en' ? meta.nameEn : meta.name) : id;
+    const count = existingMonths[id] || 0;
+    const label = count > 0 ? `${baseName} — ${count} resultado(s)` : baseName;
+    const current = id === currentMonth ? ` (${t('admin.current')})` : '';
+    return `<option value="${id}">${label}${current}</option>`;
+  }).join('');
+
+  const allLabel = getLanguage() === 'en' ? 'All months (delete everything)' : 'Todos los meses (borrar todo)';
+  select.innerHTML = `<option value="__ALL__">⚠️ ${allLabel}</option>` + monthOptions;
 }
 
 async function resetMonth() {
   const monthId = document.getElementById('reset-month').value;
   const msgEl = document.getElementById('reset-message');
+  const deleteAll = monthId === '__ALL__';
 
-  if (!confirm('¿Estás segura? Se eliminarán TODOS los resultados de ' + monthId)) {
+  const confirmMsg = deleteAll
+    ? '¿Estás segura? Se eliminarán TODOS los resultados de TODOS los meses.'
+    : '¿Estás segura? Se eliminarán TODOS los resultados de ' + monthId;
+
+  if (!confirm(confirmMsg)) {
     return;
   }
 
   try {
-    const resultsSnap = await db.collection('results')
-      .where('month', '==', monthId)
-      .get();
+    const resultsSnap = deleteAll
+      ? await db.collection('results').get()
+      : await db.collection('results').where('month', '==', monthId).get();
 
     if (resultsSnap.empty) {
-      msgEl.textContent = 'No hay resultados para eliminar en este mes.';
+      msgEl.textContent = 'No hay resultados para eliminar en esta selección.';
       msgEl.style.color = '#666';
       msgEl.classList.remove('hidden');
       return;
     }
 
-    const batch = db.batch();
-    resultsSnap.forEach(doc => batch.delete(doc.ref));
-    await batch.commit();
+    const docs = resultsSnap.docs;
+    for (let i = 0; i < docs.length; i += 450) {
+      const batch = db.batch();
+      docs.slice(i, i + 450).forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+    }
 
-    msgEl.textContent = '✅ Se eliminaron ' + resultsSnap.size + ' resultados. Los puntos están en 0.';
+    msgEl.textContent = '✅ Se eliminaron ' + docs.length + ' resultados. Los puntos están en 0.';
     msgEl.style.color = '#2D5016';
     msgEl.classList.remove('hidden');
+
+    await renderResetForm();
   } catch (e) {
     msgEl.textContent = '❌ Error: ' + e.message;
     msgEl.style.color = '#c62828';
